@@ -72,7 +72,14 @@ module.exports = function(options) {
 
   // Listen for requests to post the Message to the Conversation
   queue.process(webhookName + ' post-reply', function(job, done) {
-    options.layer.client.messages.sendTextFromUser(job.data.conversation, job.data.sender, job.data.text, function(err) {
+    const body = {
+      sender: { 'user_id', job.data.sender },
+      parts: [
+        { body: job.data.text, mime_type: 'text/plain' },
+        { body: { via: 'email' }, mime_type: 'application/metadata' }
+      ]
+    };
+    options.layer.client.messages.send(job.data.conversation, body, function(err) {
       if (err) {
         console.error(new Date().toLocaleString() + ': ' + webhookName + ': Failed to post email to Conversation', err);
         done(err);
